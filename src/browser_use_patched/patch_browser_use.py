@@ -1,5 +1,6 @@
 # patch_browser_use.py
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -87,6 +88,30 @@ class Page(OriginalPage):
 
         logging.info(f"Data pushed to {file_path}")
         
+    async def push_screenshot(self, filename: str, quality: int = 90):
+        """Take a screenshot of the page and save it to a file.
+
+        Args:
+            filename (str): The filename to save the screenshot to.
+            quality (int): The image quality (1-100). Defaults to 90.
+        """
+        screenshot_data = await self.screenshot(quality=quality)
+        file_path = os.path.join(DATA_DIR, filename) + ".jpeg"
+        
+        try:
+            if screenshot_data.startswith('data:'):
+                screenshot_data = screenshot_data.split(',', 1)[1]
+            
+            binary_data = base64.b64decode(screenshot_data)
+            
+            with open(file_path, "wb") as f:
+                f.write(binary_data)
+            
+            logging.info(f"Screenshot saved to {file_path}")
+        except Exception as e:
+            logging.error(f"Error saving screenshot: {e}")
+            raise
+  
 class Browser(OriginalBrowser):
     async def new_page(self, url: str | None = None) -> Page:
         """Creates a new page in the browser.
